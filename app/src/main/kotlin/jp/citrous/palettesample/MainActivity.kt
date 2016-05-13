@@ -1,6 +1,5 @@
 package jp.citrous.palettesample
 
-import android.support.v7.app.ActionBarActivity
 import android.os.Bundle
 import jp.citrous.tool.ExternalAppLauncher
 import android.content.Intent
@@ -9,6 +8,7 @@ import android.widget.ImageView
 import android.support.v7.graphics.Palette
 import android.util.Log
 import android.graphics.BitmapFactory
+import android.support.v7.app.AppCompatActivity
 import android.widget.TextView
 import android.support.v7.graphics.Palette.Swatch
 import java.io.FileNotFoundException
@@ -16,13 +16,13 @@ import java.io.FileNotFoundException
 /**
  * Created by citrous on 2015/03/07.
  */
-public class MainActivity : ActionBarActivity() {
+class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById(R.id.button).setOnClickListener {
+        findViewById(R.id.button)?.setOnClickListener {
             ExternalAppLauncher.openPhotoChooser(this, 1)
         }
     }
@@ -39,43 +39,45 @@ public class MainActivity : ActionBarActivity() {
     }
 
     fun loadImageFromUri(data: Intent) {
-        val inputStream = try {
-            getContentResolver().openInputStream(data.getData());
+        val bitmap = try {
+            contentResolver.openInputStream(data.data);
         } catch(e: FileNotFoundException) {
             e.printStackTrace()
             null
-        }
-        if (inputStream == null) return
-        val bitmap = BitmapFactory.decodeStream(inputStream);
-        inputStream.close();
-        (findViewById(R.id.image) as ImageView).setImageBitmap(bitmap)
-        Palette.generateAsync(bitmap, { palette -> extractColors(palette) })
+        }?.use { inputStream ->
+            BitmapFactory.decodeStream(inputStream);
+        } ?: return
+
+        (findViewById(R.id.image) as? ImageView)?.setImageBitmap(bitmap)
+        Palette.Builder(bitmap).generate { extractColors(it) }
     }
 
     fun extractColors(palette: Palette?) {
         if (palette == null) return
 
-        for (swatch in palette.getSwatches()) {
-            Log.i("Swatch RGB List", convertColorCodeToString(swatch.getRgb()))
+        for (swatch in palette.swatches) {
+            Log.i("Swatch RGB List", convertColorCodeToString(swatch.rgb))
         }
 
         drawColumns(palette)
     }
 
     fun drawColumns(palette: Palette) {
-        playWithColor(findViewById(R.id.normal_vibrant) as TextView, palette.getVibrantSwatch())
-        playWithColor(findViewById(R.id.normal_muted) as TextView, palette.getMutedSwatch())
-        playWithColor(findViewById(R.id.light_vibrant) as TextView, palette.getLightVibrantSwatch())
-        playWithColor(findViewById(R.id.light_muted) as TextView, palette.getLightMutedSwatch())
-        playWithColor(findViewById(R.id.dark_vibrant) as TextView, palette.getDarkVibrantSwatch())
-        playWithColor(findViewById(R.id.dark_muted) as TextView, palette.getDarkMutedSwatch())
+        playWithColor(findViewById(R.id.normal_vibrant) as? TextView, palette.vibrantSwatch)
+        playWithColor(findViewById(R.id.normal_muted) as? TextView, palette.mutedSwatch)
+        playWithColor(findViewById(R.id.light_vibrant) as? TextView, palette.lightVibrantSwatch)
+        playWithColor(findViewById(R.id.light_muted) as? TextView, palette.lightMutedSwatch)
+        playWithColor(findViewById(R.id.dark_vibrant) as? TextView, palette.darkVibrantSwatch)
+        playWithColor(findViewById(R.id.dark_muted) as? TextView, palette.darkMutedSwatch)
     }
 
-    fun playWithColor(textView: TextView, swatch: Swatch?) {
+    fun playWithColor(textView: TextView?, swatch: Swatch?) {
         if (swatch == null) return
-        textView.setText(convertColorCodeToString(swatch.getRgb()))
-        textView.setTextColor(swatch.getBodyTextColor())
-        textView.setBackgroundColor(swatch.getRgb())
+        textView?.apply {
+            text = convertColorCodeToString(swatch.rgb)
+            setTextColor(swatch.bodyTextColor)
+            setBackgroundColor(swatch.rgb)
+        }
     }
 
     fun convertColorCodeToString(colorCode: Int): String {
