@@ -8,6 +8,7 @@ import android.widget.ImageView
 import android.support.v7.graphics.Palette
 import android.util.Log
 import android.graphics.BitmapFactory
+import android.support.annotation.LayoutRes
 import android.support.v7.app.AppCompatActivity
 import android.widget.TextView
 import android.support.v7.graphics.Palette.Swatch
@@ -56,31 +57,33 @@ class MainActivity : AppCompatActivity() {
         if (palette == null) return
 
         for (swatch in palette.swatches) {
-            Log.i("Swatch RGB List", convertColorCodeToString(swatch.rgb))
+            Log.i("Swatch RGB List", swatch.rgb.convertToStringColorCodeOrNull())
         }
 
         drawColumns(palette)
     }
 
     fun drawColumns(palette: Palette) {
-        playWithColor(findViewById(R.id.normal_vibrant) as? TextView, palette.vibrantSwatch)
-        playWithColor(findViewById(R.id.normal_muted) as? TextView, palette.mutedSwatch)
-        playWithColor(findViewById(R.id.light_vibrant) as? TextView, palette.lightVibrantSwatch)
-        playWithColor(findViewById(R.id.light_muted) as? TextView, palette.lightMutedSwatch)
-        playWithColor(findViewById(R.id.dark_vibrant) as? TextView, palette.darkVibrantSwatch)
-        playWithColor(findViewById(R.id.dark_muted) as? TextView, palette.darkMutedSwatch)
+        playWithColor(findTextView(R.id.normal_vibrant), palette.vibrantSwatch)
+        playWithColor(findTextView(R.id.normal_muted), palette.mutedSwatch)
+        playWithColor(findTextView(R.id.light_vibrant), palette.lightVibrantSwatch)
+        playWithColor(findTextView(R.id.light_muted), palette.lightMutedSwatch)
+        playWithColor(findTextView(R.id.dark_vibrant), palette.darkVibrantSwatch)
+        playWithColor(findTextView(R.id.dark_muted), palette.darkMutedSwatch)
     }
 
     fun playWithColor(textView: TextView?, swatch: Swatch?) {
         if (swatch == null) return
         textView?.apply {
-            text = convertColorCodeToString(swatch.rgb)
+            text = swatch.rgb.convertToStringColorCodeOrNull()
             setTextColor(swatch.bodyTextColor)
             setBackgroundColor(swatch.rgb)
         }
     }
 
-    fun convertColorCodeToString(colorCode: Int): String {
-        return java.lang.String.format("%06x", colorCode)
-    }
+    fun Int.convertToStringColorCodeOrNull(): String? = try {
+        java.lang.String.format("%06x", this)
+    } catch (e: Exception) { null }
+
+    fun findTextView(@LayoutRes resId: Int): TextView? = findViewById(resId) as? TextView
 }
